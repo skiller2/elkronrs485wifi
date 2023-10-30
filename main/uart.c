@@ -48,6 +48,7 @@ int uart_open(int no, int rx, int tx, int cts, int rts, int baud) {
 
   gpio_set_direction(GPIO_NUM_0, GPIO_MODE_OUTPUT);
 
+//Placa nueva GPIO_NUM_13, con la proto vieja GPIO_NUM_0 
   int e2 = uart_set_pin(no, tx, rx, GPIO_NUM_13, -1);
 
 
