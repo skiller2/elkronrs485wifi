@@ -48,7 +48,7 @@ int uart_open(int no, int rx, int tx, int cts, int rts, int baud) {
 
   gpio_set_direction(GPIO_NUM_0, GPIO_MODE_OUTPUT);
 
-  int e2 = uart_set_pin(no, tx, rx, GPIO_NUM_0, -1);
+  int e2 = uart_set_pin(no, tx, rx, GPIO_NUM_13, -1);
 
 
 
