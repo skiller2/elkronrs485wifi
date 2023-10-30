@@ -14,6 +14,7 @@
 #include "lwip/sys.h"
 
 #include "mongoose.h"
+#include "main.h"
 
 static EventGroupHandle_t s_wifi_event_group;
 
@@ -32,7 +33,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     esp_wifi_connect();
   } else if (event_base == WIFI_EVENT &&
              event_id == WIFI_EVENT_STA_DISCONNECTED) {
-
+      gpio_set_level(GPIO_NUM_22, 0);
       esp_wifi_disconnect();      
       esp_wifi_connect();
 
@@ -47,6 +48,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     ip_event_got_ip_t *event = (ip_event_got_ip_t *) event_data;
     MG_INFO(("IP ADDRESS: " IPSTR ". Go to:", IP2STR(&event->ip_info.ip)));
     MG_INFO(("http://" IPSTR, IP2STR(&event->ip_info.ip)));
+    gpio_set_level(GPIO_NUM_22, 1);
     s_retry_num = 0;
     xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
   }
@@ -103,10 +105,11 @@ bool wifi_init(const char *ssid, const char *pass) {
 
   MG_DEBUG(("wifi_init_sta finished."));
 
-  EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-                                         WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
-                                         pdFALSE, pdFALSE, portMAX_DELAY);
 
+//  EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
+//                                         WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+//                                         pdFALSE, pdFALSE, portMAX_DELAY);
+/*
   if (bits & WIFI_CONNECTED_BIT) {
     MG_INFO(("connected to ap SSID:%s", ssid));
     result = true;
@@ -115,12 +118,12 @@ bool wifi_init(const char *ssid, const char *pass) {
   } else {
     MG_ERROR(("UNEXPECTED EVENT"));
   }
-
+*/
   /* The event will not be processed after unregister */
 //  ESP_ERROR_CHECK(esp_event_handler_instance_unregister(
 //      IP_EVENT, IP_EVENT_STA_GOT_IP, instance_got_ip));
 //  ESP_ERROR_CHECK(esp_event_handler_instance_unregister(
 //      WIFI_EVENT, ESP_EVENT_ANY_ID, instance_any_id));
 //  vEventGroupDelete(s_wifi_event_group);
-  return result;
+  return true;
 }
