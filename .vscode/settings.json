@@ -5,5 +5,10 @@
     "board/esp32-wrover-kit-3.3v.cfg"
   ],
   "idf.flashType": "UART",
-  "idf.portWin": "COM4"
+  "idf.portWin": "COM3",
+  "files.associations": {
+    "*.inc": "c",
+    "manager.h": "c",
+    "main.h": "c"
+  }
 }

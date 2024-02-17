@@ -14,5 +14,7 @@
 void uart_bridge_fn(struct mg_connection *, int, void *, void *);
 int uart_read(void *buf, size_t len);
 bool wifi_init(const char *ssid, const char *pass);
+bool wifi_init_prov();
+bool wifi_prev();
 void cli(uint8_t ch);
 void cli_init(void);

@@ -2,6 +2,8 @@
 // All rights reserved
 
 #include "main.h"
+#include <wifi_provisioning/manager.h>
+#include <wifi_provisioning/scheme_softap.h>
 
 const char *s_listening_url = "http://0.0.0.0:80";
 
@@ -45,6 +47,8 @@ void app_main(void) {
   gpio_set_direction(GPIO_NUM_21,GPIO_MODE_OUTPUT);
   gpio_set_level(GPIO_NUM_21, 0);
 
+  wifi_prev();
+
   if (json != NULL && gpio_get_level(GPIO_NUM_18)==0) {
     char *ssid = mg_json_get_str(mg_str(json), "$.ssid");
     char *pass = mg_json_get_str(mg_str(json), "$.pass");
@@ -53,6 +57,11 @@ void app_main(void) {
     free(pass);
     free(json);
   } else {
+    //ACA
+    MG_INFO(("WiFi is not configured, create WIFI AP Prov"));
+
+    wifi_init_prov();
+
     // If WiFi is not configured, run CLI until configured
     MG_INFO(("WiFi is not configured, running CLI. Press enter"));
     cli_init();
