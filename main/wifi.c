@@ -59,7 +59,6 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 
 
       MG_INFO(("Store Wi-Fi credentials"));
-//      char *json = mg_file_read(&mg_fs_posix, WIFI_FILE, NULL);
 
       mg_file_printf(&mg_fs_posix, WIFI_FILE, "{%m:%m,%m:%m}\n", mg_print_esc, 0,
                    "ssid", mg_print_esc, 0, (const char *)wifi_sta_cfg->ssid, mg_print_esc, 0, "pass",
