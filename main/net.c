@@ -22,9 +22,9 @@ struct state
 } s_state = {.tcp = {.enable = true},
              .websocket = {.enable = true},
              .mqtt = {.enable = false},
-             .tx = 10,
-             .rx = 9,
-             .baud = 115200};
+             .tx = 26,
+             .rx = 25,
+             .baud = 9600};
 
 void uart_init(int tx, int rx, int baud);
 int uart_read(void *buf, size_t len);
