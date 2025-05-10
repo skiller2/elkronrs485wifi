@@ -63,11 +63,15 @@ gpio_set_level(GPIO_NUM_0, 0);
 
   app_wifi_init();
 
+  if (gpio_get_level(GPIO_NUM_18) == 0)
+  {
+    wifi_prov_mgr_reset_provisioning();
+  }
 
 
   /*if (gpio_get_level(GPIO_NUM_18) == 0)
   {
-
+    wifi_prov_mgr_reset_provisioning();
   }
   else
   {
