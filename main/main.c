@@ -65,24 +65,13 @@ gpio_set_level(GPIO_NUM_0, 0);
 
 
 
-  if (json != NULL && gpio_get_level(GPIO_NUM_18) == 0)
+  /*if (gpio_get_level(GPIO_NUM_18) == 0)
   {
-    char *ssid = mg_json_get_str(mg_str(json), "$.ssid");
-    char *pass = mg_json_get_str(mg_str(json), "$.pass");
-    wifi_init(ssid, pass);
-    free(ssid);
-    free(pass);
-    free(json);
+
   }
   else
   {
-    // ACA
-    MG_INFO(("WiFi is not configured, create WIFI AP Prov"));
 
-    wifi_init_prov();
-
-    // If WiFi is not configured, run CLI until configured
-    MG_INFO(("WiFi is not configured, running CLI. Press enter"));
     cli_init();
 
 
@@ -131,13 +120,12 @@ if (current_time - last_toggle_time > 50) { // Change LED every 200ms
     }
 }
 
-      uint8_t ch = getchar();
-      cli(ch);
+   
       usleep(10000);
     }
   }
 
-
+*/
   struct mg_mgr mgr;
   mg_mgr_init(&mgr);
   mg_log_set(MG_LL_DEBUG); // Set log level

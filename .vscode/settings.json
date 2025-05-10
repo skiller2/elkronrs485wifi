@@ -12,6 +12,6 @@
     "main.h": "c",
     "scheme_ble.h": "c"
   },
-  "idf.pythonInstallPath": "C:\\Users\\alfredo\\.espressif\\tools\\idf-python\\3.8.7\\python.exe"
+  "idf.pythonInstallPath": "C:\\espressif\\.espressif\\tools\\idf-python\\3.8.7\\python.exe"
 
 }
