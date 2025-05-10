@@ -20,6 +20,7 @@ void config_write(struct mg_str config) {
 
 
 void app_main(void) {
+
   // Mount filesystem
   esp_vfs_spiffs_conf_t conf = {
       .base_path = FS_ROOT, .max_files = 20, .format_if_mount_failed = true, .partition_label = "storage"};
@@ -59,6 +60,14 @@ gpio_set_level(GPIO_NUM_0, 0);
   gpio_set_direction(GPIO_NUM_21,GPIO_MODE_OUTPUT);
   gpio_set_level(GPIO_NUM_21, 0);
 
+
+  app_wifi_init();
+
+
+
+  //wifi_init(NULL, NULL);
+
+  /*
   wifi_prev();
 
   if (json != NULL && gpio_get_level(GPIO_NUM_18)==0) {
@@ -83,6 +92,9 @@ gpio_set_level(GPIO_NUM_0, 0);
       usleep(10000);
     }
   }
+*/
+
+
 
 
   struct mg_mgr mgr;
@@ -98,4 +110,7 @@ gpio_set_level(GPIO_NUM_0, 0);
     gpio_set_level(GPIO_NUM_2, 1);
     mg_mgr_poll(&mgr, 150);
   };  // Infinite event loop
+
+
+ 
 }
