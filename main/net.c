@@ -8,13 +8,15 @@
 #define DEFAULT_WEBSOCKET "ws://0.0.0.0:4002"
 #define DEFAULT_MQTT "mqtt://broker.hivemq.com:1883?tx=b/tx&rx=b/rx"
 
-struct endpoint {
+struct endpoint
+{
   char *url;
   bool enable;
   struct mg_connection *c;
 };
 
-struct state {
+struct state
+{
   struct endpoint tcp, websocket, mqtt;
   int tx, rx, baud;
 } s_state = {.tcp = {.enable = true},
@@ -28,110 +30,159 @@ void uart_init(int tx, int rx, int baud);
 int uart_read(void *buf, size_t len);
 void uart_write(const void *buf, size_t len);
 int uart_write_queue(const void *buf, size_t len);
-void get_mac_address_string(char *mac_str, size_t size);
+
 char *config_read(void);
 void config_write(struct mg_str config);
+
+void get_mac_address_string(char *mac_str, size_t size)
+{
+  uint8_t mac[6];
+  esp_err_t ret = esp_wifi_get_mac(ESP_IF_WIFI_STA, mac);
+  if (ret == ESP_OK)
+  {
+    snprintf(mac_str, size, "%02X%02X%02X%02X%02X%02X",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  }
+  else
+  {
+    snprintf(mac_str, size, "Error getting MAC");
+  }
+}
 
 // Let users define their own UART API. If they don't, use a dummy one
 #if defined(UART_API_IMPLEMENTED)
 #else
-void uart_init(int tx, int rx, int baud) {
+void uart_init(int tx, int rx, int baud)
+{
   // We use stdin/stdout as UART. Make stdin non-blocking
 #if MG_ARCH != MG_ARCH_WIN32
   fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
 #endif
-  (void) tx, (void) rx, (void) baud;
+  (void)tx, (void)rx, (void)baud;
 }
 
-void uart_write(const void *buf, size_t len) {
-  fwrite(buf, 1, len, stdout);  // Write to stdout
+void uart_write(const void *buf, size_t len)
+{
+  fwrite(buf, 1, len, stdout); // Write to stdout
   fflush(stdout);
 }
 
-int uart_read(void *buf, size_t len) {
+int uart_read(void *buf, size_t len)
+{
 #if MG_ARCH == MG_ARCH_WIN32
-  (void) buf, (void) len;
+  (void)buf, (void)len;
   return 0;
 #else
-  return read(0, buf, len);  // Read from stdin
+  return read(0, buf, len); // Read from stdin
 #endif
 }
 
-char *config_read(void) {
+char *config_read(void)
+{
   return mg_file_read(&mg_fs_posix, "config.json", NULL);
 }
 
-void config_write(struct mg_str config) {
+void config_write(struct mg_str config)
+{
   mg_file_write(&mg_fs_posix, "config.json", config.ptr, config.len);
 }
 #endif
 
 // Event handler for a connected Websocket client
-static void ws_fn(struct mg_connection *c, int ev, void *evd, void *fnd) {
-  if (ev == MG_EV_HTTP_MSG) {
+static void ws_fn(struct mg_connection *c, int ev, void *evd, void *fnd)
+{
+  if (ev == MG_EV_HTTP_MSG)
+  {
     mg_ws_upgrade(c, evd, NULL);
-  } else if (ev == MG_EV_WS_OPEN) {
-    // c->is_hexdumping = 1;
-    c->data[0] = 'W';  // When WS handhake is done, mark us as WS client
-  } else if (ev == MG_EV_WS_MSG) {
-    struct mg_ws_message *wm = (struct mg_ws_message *) evd;
-    uart_write_queue(wm->data.ptr, wm->data.len);  // Send to UART
-    c->recv.len = 0;                         // Discard received data
-  } else if (ev == MG_EV_CLOSE) {
-    if (c->is_listening) s_state.websocket.c = NULL;
   }
-  (void) fnd;
+  else if (ev == MG_EV_WS_OPEN)
+  {
+    // c->is_hexdumping = 1;
+    c->data[0] = 'W'; // When WS handhake is done, mark us as WS client
+  }
+  else if (ev == MG_EV_WS_MSG)
+  {
+    struct mg_ws_message *wm = (struct mg_ws_message *)evd;
+    uart_write_queue(wm->data.ptr, wm->data.len); // Send to UART
+    c->recv.len = 0;                              // Discard received data
+  }
+  else if (ev == MG_EV_CLOSE)
+  {
+    if (c->is_listening)
+      s_state.websocket.c = NULL;
+  }
+  (void)fnd;
 }
 
 // Event handler for a connected TCP client
-static void tcp_fn(struct mg_connection *c, int ev, void *evd, void *fnd) {
-  if (ev == MG_EV_ACCEPT) {
+static void tcp_fn(struct mg_connection *c, int ev, void *evd, void *fnd)
+{
+  if (ev == MG_EV_ACCEPT)
+  {
     // c->is_hexdumping = 1;
-    c->data[0] = 'T';  // When client is connected, mark us as TCP client
-  } else if (ev == MG_EV_READ) {
-    uart_write_queue(c->recv.buf, c->recv.len);  // Send to UART
-    c->recv.len = 0;                       // Discard received data
-  } else if (ev == MG_EV_CLOSE) {
-    if (c->is_listening) s_state.tcp.c = NULL;
+    c->data[0] = 'T'; // When client is connected, mark us as TCP client
   }
-  (void) fnd, (void) evd;
+  else if (ev == MG_EV_READ)
+  {
+    uart_write_queue(c->recv.buf, c->recv.len); // Send to UART
+    c->recv.len = 0;                            // Discard received data
+  }
+  else if (ev == MG_EV_CLOSE)
+  {
+    if (c->is_listening)
+      s_state.tcp.c = NULL;
+  }
+  (void)fnd, (void)evd;
 }
 
 // Extract topic name from the MQTT address
-static struct mg_str mqtt_topic(const char *name, const char *dflt) {
+static struct mg_str mqtt_topic(const char *name, const char *dflt)
+{
   struct mg_str qs = mg_str(strchr(s_state.mqtt.url, '?'));
   struct mg_str v = mg_http_var(qs, mg_str(name));
   return v.ptr == NULL ? mg_str(dflt) : v;
 }
 
 // Event handler for MQTT connection
-static void mq_fn(struct mg_connection *c, int ev, void *evd, void *fnd) {
-  if (ev == MG_EV_OPEN) {
+static void mq_fn(struct mg_connection *c, int ev, void *evd, void *fnd)
+{
+  if (ev == MG_EV_OPEN)
+  {
     // c->is_hexdumping = 1;
-  } else if (ev == MG_EV_MQTT_OPEN) {
+  }
+  else if (ev == MG_EV_MQTT_OPEN)
+  {
     c->data[0] = 'M';
-    mg_mqtt_sub(c, mqtt_topic("rx", "b/rx"), 1);  // Subscribe to RX topic
-  } else if (ev == MG_EV_MQTT_MSG) {
-    struct mg_mqtt_message *mm = evd;        // MQTT message
-    uart_write_queue(mm->data.ptr, mm->data.len);  // Send to UART
-    
-  } else if (ev == MG_EV_CLOSE) {
+    mg_mqtt_sub(c, mqtt_topic("rx", "b/rx"), 1); // Subscribe to RX topic
+  }
+  else if (ev == MG_EV_MQTT_MSG)
+  {
+    struct mg_mqtt_message *mm = evd;             // MQTT message
+    uart_write_queue(mm->data.ptr, mm->data.len); // Send to UART
+  }
+  else if (ev == MG_EV_CLOSE)
+  {
     s_state.mqtt.c = NULL;
   }
-  (void) fnd, (void) evd;
+  (void)fnd, (void)evd;
 }
 
 // Software timer with a frequency close to the scheduling time slot
-static void timer_fn(void *param) {
+bool in[5] = {0, 0, 0, 0, 0};
+static void timer_fn(void *param)
+{
   // Start listeners if they're stopped for any reason
-  struct mg_mgr *mgr = (struct mg_mgr *) param;
-  if (s_state.tcp.c == NULL && s_state.tcp.enable) {
+  struct mg_mgr *mgr = (struct mg_mgr *)param;
+  if (s_state.tcp.c == NULL && s_state.tcp.enable)
+  {
     s_state.tcp.c = mg_listen(mgr, s_state.tcp.url, tcp_fn, 0);
   }
-  if (s_state.websocket.c == NULL && s_state.websocket.enable) {
+  if (s_state.websocket.c == NULL && s_state.websocket.enable)
+  {
     s_state.websocket.c = mg_http_listen(mgr, s_state.websocket.url, ws_fn, 0);
   }
-  if (s_state.mqtt.c == NULL && s_state.mqtt.enable) {
+  if (s_state.mqtt.c == NULL && s_state.mqtt.enable)
+  {
     struct mg_mqtt_opts opts = {.clean = true};
     s_state.mqtt.c = mg_mqtt_connect(mgr, s_state.mqtt.url, &opts, mq_fn, 0);
   }
@@ -139,11 +190,15 @@ static void timer_fn(void *param) {
   // Read UART
   char buf[512];
   int len = uart_read(buf, sizeof(buf));
-  if (len > 0) {
+  if (len > 0)
+  {
     // Iterate over all connections. Send data to WS and TCP clients
-    for (struct mg_connection *c = mgr->conns; c != NULL; c = c->next) {
-      if (c->data[0] == 'W') mg_ws_send(c, buf, len, WEBSOCKET_OP_TEXT);
-      if (c->data[0] == 'T') mg_send(c, buf, len);
+    for (struct mg_connection *c = mgr->conns; c != NULL; c = c->next)
+    {
+      if (c->data[0] == 'W')
+        mg_ws_send(c, buf, len, WEBSOCKET_OP_TEXT);
+      if (c->data[0] == 'T')
+        mg_send(c, buf, len);
       if (c->data[0] == 'M')
         mg_mqtt_pub(c, mqtt_topic("tx", "b/tx"), mg_str_n(buf, len), 1, false);
     }
@@ -154,96 +209,111 @@ static void timer_fn(void *param) {
   char topicIN[50];
   for (struct mg_connection *c = mgr->conns; c != NULL; c = c->next)
   {
-    //if (c->data[0] == 'W')
-      //        mg_ws_send(c, buf, len, WEBSOCKET_OP_TEXT);
-     // if (c->data[0] == 'T')
-        //      mg_send(c, buf, len);
-       if (c->data[0] == 'M')
-        {
-          memset(topicIN,0,sizeof(topicIN));
-           //mg_mqtt_pub(c, mqtt_topic("tx", "b/tx"), mg_str_n(buf, len), 1, false);
-          if (in[1] != gpio_get_level(GPIO_NUM_5))
-          {
-            in[1] = gpio_get_level(GPIO_NUM_5);
+    // if (c->data[0] == 'W')
+    //         mg_ws_send(c, buf, len, WEBSOCKET_OP_TEXT);
+    // if (c->data[0] == 'T')
+    //      mg_send(c, buf, len);
+    if (c->data[0] == 'M')
+    {
+      memset(topicIN, 0, sizeof(topicIN));
+      // mg_mqtt_pub(c, mqtt_topic("tx", "b/tx"), mg_str_n(buf, len), 1, false);
+      if (in[1] != gpio_get_level(GPIO_NUM_5))
+      {
+        in[1] = gpio_get_level(GPIO_NUM_5);
 
-            snprintf(message, sizeof(message), "%d", in[1]);
-            MG_INFO(("Publishing %s", message));
-            get_mac_address_string(topicIN, sizeof(topicIN));
-            strcat(topicIN,"/I2");
-            mg_mqtt_pub(c, mqtt_topic("I2", topicIN), mg_str_n(message, strlen(message)), 1, false);
-          }
-          // entrada 1
-          if (in[0] != gpio_get_level(GPIO_NUM_17))
-          {
-            in[0] = gpio_get_level(GPIO_NUM_17);
+        snprintf(message, sizeof(message), "%d", in[1]);
+        MG_INFO(("Publishing %s", message));
+        get_mac_address_string(topicIN, sizeof(topicIN));
+        strcat(topicIN, "/I2");
+        mg_mqtt_pub(c, mqtt_topic("I2", topicIN), mg_str_n(message, strlen(message)), 1, false);
+      }
+      // entrada 1
+      if (in[0] != gpio_get_level(GPIO_NUM_17))
+      {
+        in[0] = gpio_get_level(GPIO_NUM_17);
 
-            snprintf(message, sizeof(message), "%d", in[0]);
-            MG_INFO(("Publishing: %s", message));
-            get_mac_address_string(topicIN, sizeof(topicIN));
-            strcat(topicIN,"/I1");
-            mg_mqtt_pub(c, mqtt_topic("I1", topicIN), mg_str_n(message, strlen(message)), 1, false);
-          }
-          // entrada 4
-          if (in[3] != gpio_get_level(GPIO_NUM_16))
-          {
-            in[3] = gpio_get_level(GPIO_NUM_16);
+        snprintf(message, sizeof(message), "%d", in[0]);
+        MG_INFO(("Publishing: %s", message));
+        get_mac_address_string(topicIN, sizeof(topicIN));
+        strcat(topicIN, "/I1");
+        mg_mqtt_pub(c, mqtt_topic("I1", topicIN), mg_str_n(message, strlen(message)), 1, false);
+      }
+      // entrada 4
+      if (in[3] != gpio_get_level(GPIO_NUM_16))
+      {
+        in[3] = gpio_get_level(GPIO_NUM_16);
 
-            snprintf(message, sizeof(message), "%d", in[3]);
-            MG_INFO(("Publishing: %s", message));
-            get_mac_address_string(topicIN, sizeof(topicIN));
-            strcat(topicIN,"/I4");
-            mg_mqtt_pub(c, mqtt_topic("I4", topicIN), mg_str_n(message, strlen(message)), 1, false);
-          }
-        //entrada 3
-          if (in[2] != gpio_get_level(GPIO_NUM_4))
-          {
-            in[2] = gpio_get_level(GPIO_NUM_4);
+        snprintf(message, sizeof(message), "%d", in[3]);
+        MG_INFO(("Publishing: %s", message));
+        get_mac_address_string(topicIN, sizeof(topicIN));
+        strcat(topicIN, "/I4");
+        mg_mqtt_pub(c, mqtt_topic("I4", topicIN), mg_str_n(message, strlen(message)), 1, false);
+      }
+      // entrada 3
+      if (in[2] != gpio_get_level(GPIO_NUM_4))
+      {
+        in[2] = gpio_get_level(GPIO_NUM_4);
 
-            snprintf(message, sizeof(message), "%d", in[2]);
-            MG_INFO(("Publishing: %s", message));
-            get_mac_address_string(topicIN, sizeof(topicIN));
-            strcat(topicIN,"/I3");
-            mg_mqtt_pub(c, mqtt_topic("I3", topicIN), mg_str_n(message, strlen(message)), 1, false);
-          }
-        }
+        snprintf(message, sizeof(message), "%d", in[2]);
+        MG_INFO(("Publishing: %s", message));
+        get_mac_address_string(topicIN, sizeof(topicIN));
+        strcat(topicIN, "/I3");
+        mg_mqtt_pub(c, mqtt_topic("I3", topicIN), mg_str_n(message, strlen(message)), 1, false);
+      }
+    }
+  }
 }
-
-static void update_string(struct mg_str json, const char *path, char **value) {
+static void update_string(struct mg_str json, const char *path, char **value)
+{
   char *jval;
-  if ((jval = mg_json_get_str(json, path)) != NULL) {
+  if ((jval = mg_json_get_str(json, path)) != NULL)
+  {
     free(*value);
     *value = strdup(jval);
   }
 }
 
-static void config_apply(struct mg_str s) {
-  MG_INFO(("Applying config: %.*s", (int) s.len, s.ptr));
+static void config_apply(struct mg_str s)
+{
+  MG_INFO(("Applying config: %.*s", (int)s.len, s.ptr));
 
   bool b;
-  if (mg_json_get_bool(s, "$.tcp.enable", &b)) s_state.tcp.enable = b;
-  if (mg_json_get_bool(s, "$.ws.enable", &b)) s_state.websocket.enable = b;
-  if (mg_json_get_bool(s, "$.mqtt.enable", &b)) s_state.mqtt.enable = b;
+  if (mg_json_get_bool(s, "$.tcp.enable", &b))
+    s_state.tcp.enable = b;
+  if (mg_json_get_bool(s, "$.ws.enable", &b))
+    s_state.websocket.enable = b;
+  if (mg_json_get_bool(s, "$.mqtt.enable", &b))
+    s_state.mqtt.enable = b;
 
   update_string(s, "$.tcp.url", &s_state.tcp.url);
   update_string(s, "$.mqtt.url", &s_state.mqtt.url);
   update_string(s, "$.ws.url", &s_state.websocket.url);
 
   double v;
-  if (mg_json_get_num(s, "$.rx", &v)) s_state.rx = (int) v;
-  if (mg_json_get_num(s, "$.tx", &v)) s_state.tx = (int) v;
-  if (mg_json_get_num(s, "$.baud", &v)) s_state.baud = (int) v;
+  if (mg_json_get_num(s, "$.rx", &v))
+    s_state.rx = (int)v;
+  if (mg_json_get_num(s, "$.tx", &v))
+    s_state.tx = (int)v;
+  if (mg_json_get_num(s, "$.baud", &v))
+    s_state.baud = (int)v;
 
-  if (s_state.mqtt.c) s_state.mqtt.c->is_closing = 1;
-  if (s_state.tcp.c) s_state.tcp.c->is_closing = 1;
-  if (s_state.websocket.c) s_state.websocket.c->is_closing = 1;
+  if (s_state.mqtt.c)
+    s_state.mqtt.c->is_closing = 1;
+  if (s_state.tcp.c)
+    s_state.tcp.c->is_closing = 1;
+  if (s_state.websocket.c)
+    s_state.websocket.c->is_closing = 1;
 }
 
 // HTTP request handler function
 void uart_bridge_fn(struct mg_connection *c, int ev, void *ev_data,
-                    void *fn_data) {
-  if (ev == MG_EV_OPEN && c->is_listening) {
+                    void *fn_data)
+{
+  if (ev == MG_EV_OPEN && c->is_listening)
+  {
     char *config = config_read();
-    if (config != NULL) config_apply(mg_str(config));
+    if (config != NULL)
+      config_apply(mg_str(config));
     free(config);
     s_state.tcp.url = strdup(DEFAULT_TCP);
     s_state.websocket.url = strdup(DEFAULT_WEBSOCKET);
@@ -251,15 +321,22 @@ void uart_bridge_fn(struct mg_connection *c, int ev, void *ev_data,
     mg_timer_add(c->mgr, 20, MG_TIMER_REPEAT, timer_fn, c->mgr);
     uart_init(s_state.tx, s_state.rx, s_state.baud);
     // mg_log_set(MG_LL_DEBUG);                  // Set log level
-  } else if (ev == MG_EV_HTTP_MSG) {
-    struct mg_http_message *hm = (struct mg_http_message *) ev_data;
-    if (mg_http_match_uri(hm, "/api/hi")) {
-      mg_http_reply(c, 200, "", "hi\n");  // Testing endpoint
-    } else if (mg_http_match_uri(hm, "/api/config/set")) {
+  }
+  else if (ev == MG_EV_HTTP_MSG)
+  {
+    struct mg_http_message *hm = (struct mg_http_message *)ev_data;
+    if (mg_http_match_uri(hm, "/api/hi"))
+    {
+      mg_http_reply(c, 200, "", "hi\n"); // Testing endpoint
+    }
+    else if (mg_http_match_uri(hm, "/api/config/set"))
+    {
       config_apply(hm->body);
       config_write(hm->body);
       mg_http_reply(c, 200, "", "true\n");
-    } else if (mg_http_match_uri(hm, "/api/config/get")) {
+    }
+    else if (mg_http_match_uri(hm, "/api/config/get"))
+    {
       mg_http_reply(c, 200, "Content-Type: application/json\r\n",
                     "{%m:{%m:%m,%m:%s},%m:{%m:%m,%m:%s},%m:{%m:%m,%m:%s},"
                     "%m:%d,%m:%d,%m:%d}\n",
@@ -274,7 +351,9 @@ void uart_bridge_fn(struct mg_connection *c, int ev, void *ev_data,
                     s_state.mqtt.enable ? "true" : "false", mg_print_esc, 0,
                     "rx", s_state.rx, mg_print_esc, 0, "tx", s_state.tx,
                     mg_print_esc, 0, "baud", s_state.baud);
-    } else {
+    }
+    else
+    {
       struct mg_http_serve_opts opts;
       memset(&opts, 0, sizeof(opts));
 #if 1
@@ -286,17 +365,5 @@ void uart_bridge_fn(struct mg_connection *c, int ev, void *ev_data,
       mg_http_serve_dir(c, ev_data, &opts);
     }
   }
-  (void) fn_data;
-}
-
-
-void get_mac_address_string(char *mac_str, size_t size) {
-  uint8_t mac[6];
-  esp_err_t ret = esp_wifi_get_mac(ESP_IF_WIFI_STA, mac);
-  if (ret == ESP_OK) {
-      snprintf(mac_str, size, "%02X%02X%02X%02X%02X%02X",
-               mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-  } else {
-      snprintf(mac_str, size, "Error getting MAC");
-  }
+  (void)fn_data;
 }
