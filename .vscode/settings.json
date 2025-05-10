@@ -10,5 +10,7 @@
     "*.inc": "c",
     "manager.h": "c",
     "main.h": "c"
-  }
+  },
+  "idf.pythonInstallPath": "C:\\Users\\alfredo\\.espressif\\tools\\idf-python\\3.8.7\\python.exe"
+
 }

@@ -33,6 +33,14 @@ void app_main(void) {
   // Try to connect to wifi by using saved WiFi credentials
   char *json = mg_file_read(&mg_fs_posix, WIFI_FILE, NULL);
 
+
+
+//LED BATERIA
+gpio_set_direction(GPIO_NUM_0,GPIO_MODE_OUTPUT);
+gpio_set_level(GPIO_NUM_0, 0);
+
+
+
   gpio_set_direction(GPIO_NUM_18,GPIO_MODE_INPUT);
 
   //LED COMUNICACION
