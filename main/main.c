@@ -15,6 +15,10 @@ void config_write(struct mg_str config) {
   mg_file_write(&mg_fs_posix, FS_ROOT "/config.json", config.ptr, config.len);
 }
 
+
+
+
+
 void app_main(void) {
   // Mount filesystem
   esp_vfs_spiffs_conf_t conf = {
@@ -28,6 +32,14 @@ void app_main(void) {
 
   // Try to connect to wifi by using saved WiFi credentials
   char *json = mg_file_read(&mg_fs_posix, WIFI_FILE, NULL);
+
+
+
+//LED BATERIA
+gpio_set_direction(GPIO_NUM_0,GPIO_MODE_OUTPUT);
+gpio_set_level(GPIO_NUM_0, 0);
+
+
 
   gpio_set_direction(GPIO_NUM_18,GPIO_MODE_INPUT);
 
