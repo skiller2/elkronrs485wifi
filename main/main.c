@@ -18,7 +18,7 @@ void config_write(struct mg_str config) {
 
 
 
-
+#include "esp_log.h"
 void app_main(void) {
 
   // Mount filesystem
@@ -42,94 +42,30 @@ gpio_set_level(GPIO_NUM_0, 0);
 
 
 
-  gpio_set_direction(GPIO_NUM_18,GPIO_MODE_INPUT);
 
-  //LED COMUNICACION
-  gpio_set_direction(GPIO_NUM_22,GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_22, 0);
+//LED COMUNICACION
+gpio_set_direction(GPIO_NUM_22,GPIO_MODE_OUTPUT);
+gpio_set_level(GPIO_NUM_22, 0);
 
-  //LED ON
-  gpio_set_direction(GPIO_NUM_2,GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_2, 0);
+//LED ON
+gpio_set_direction(GPIO_NUM_2,GPIO_MODE_OUTPUT);
+gpio_set_level(GPIO_NUM_2, 0);
 
-  //LED FALLA
-  gpio_set_direction(GPIO_NUM_23,GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_23, 0);
+//LED FALLA
+gpio_set_direction(GPIO_NUM_23,GPIO_MODE_OUTPUT);
+gpio_set_level(GPIO_NUM_23, 0);
 
-  //LED ALARMA
-  gpio_set_direction(GPIO_NUM_21,GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_21, 0);
+//LED ALARMA
+gpio_set_direction(GPIO_NUM_21,GPIO_MODE_OUTPUT);
+gpio_set_level(GPIO_NUM_21, 0);
 
 
+gpio_set_direction(GPIO_NUM_18,GPIO_MODE_INPUT);
+
+gpio_set_level(GPIO_NUM_2, 1);
   app_wifi_init();
 
-  if (gpio_get_level(GPIO_NUM_18) == 0)
-  {
-    wifi_prov_mgr_reset_provisioning();
-  }
 
-
-  /*if (gpio_get_level(GPIO_NUM_18) == 0)
-  {
-    wifi_prov_mgr_reset_provisioning();
-  }
-  else
-  {
-
-    cli_init();
-
-
-
-    for (;;)
-    {
-static int current_led = 0;
-static uint32_t last_toggle_time = 0;
-static bool direction_forward = true; // Control the direction of the effect
-uint32_t current_time = esp_timer_get_time() / 1000;
-
-if (current_time - last_toggle_time > 50) { // Change LED every 200ms
-    last_toggle_time = current_time;
-
-    // Turn off all LEDs before changing the current one
-    gpio_set_level(GPIO_NUM_2, 0);  // LED ON
-    gpio_set_level(GPIO_NUM_19, 0); // LED DC
-    gpio_set_level(GPIO_NUM_0, 0);  // LED BATERIA
-    gpio_set_level(GPIO_NUM_21, 0); // LED ALARMA
-    gpio_set_level(GPIO_NUM_22, 0); // LED COMUNICACION
-    gpio_set_level(GPIO_NUM_23, 0); // LED FALLA
-
-    // Turn on the current LED
-    switch (current_led) {
-        case 0: gpio_set_level(GPIO_NUM_2, 1); break;  // LED ON
-        case 1: gpio_set_level(GPIO_NUM_19, 1); break; // LED DC
-        case 2: gpio_set_level(GPIO_NUM_0, 1); break;  // LED BATERIA
-        case 3: gpio_set_level(GPIO_NUM_21, 1); break; // LED ALARMA
-        case 4: gpio_set_level(GPIO_NUM_22, 1); break; // LED COMUNICACION
-        case 5: gpio_set_level(GPIO_NUM_23, 1); break; // LED FALLA
-    }
-
-    // Update the current LED index based on the direction
-    if (direction_forward) {
-        current_led++;
-        if (current_led > 5) {
-            current_led = 4; // Reverse direction at the last LED
-            direction_forward = false;
-        }
-    } else {
-        current_led--;
-        if (current_led < 0) {
-            current_led = 1; // Reverse direction at the first LED
-            direction_forward = true;
-        }
-    }
-}
-
-   
-      usleep(10000);
-    }
-  }
-
-*/
   struct mg_mgr mgr;
   mg_mgr_init(&mgr);
   mg_log_set(MG_LL_DEBUG); // Set log level
