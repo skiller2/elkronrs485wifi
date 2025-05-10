@@ -26,6 +26,6 @@
   Permite setear el SSID y la password.
   Después continuar la configuración desde la página web http://x.x.x.x:80
   Para la central Elkron
-    UART TX pin = 10
-    UART TX pin = 9
+    UART TX pin = 27  antes 10
+    UART RX pin = 26  antes 9
     UART Baud = 9600

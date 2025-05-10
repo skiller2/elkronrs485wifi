@@ -15,6 +15,10 @@ void config_write(struct mg_str config) {
   mg_file_write(&mg_fs_posix, FS_ROOT "/config.json", config.ptr, config.len);
 }
 
+
+
+
+
 void app_main(void) {
   // Mount filesystem
   esp_vfs_spiffs_conf_t conf = {
