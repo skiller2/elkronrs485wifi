@@ -9,6 +9,7 @@
   "files.associations": {
     "*.inc": "c",
     "manager.h": "c",
-    "main.h": "c"
+    "main.h": "c",
+    "esp_wifi.h": "c"
   }
 }
