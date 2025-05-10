@@ -28,7 +28,7 @@ void uart_init(int tx, int rx, int baud);
 int uart_read(void *buf, size_t len);
 void uart_write(const void *buf, size_t len);
 int uart_write_queue(const void *buf, size_t len);
-
+void get_mac_address_string(char *mac_str, size_t size);
 char *config_read(void);
 void config_write(struct mg_str config);
 
@@ -148,6 +148,64 @@ static void timer_fn(void *param) {
         mg_mqtt_pub(c, mqtt_topic("tx", "b/tx"), mg_str_n(buf, len), 1, false);
     }
   }
+
+  // GPIO TASK INPUTS
+  char message[100];
+  char topicIN[50];
+  for (struct mg_connection *c = mgr->conns; c != NULL; c = c->next)
+  {
+    //if (c->data[0] == 'W')
+      //        mg_ws_send(c, buf, len, WEBSOCKET_OP_TEXT);
+     // if (c->data[0] == 'T')
+        //      mg_send(c, buf, len);
+       if (c->data[0] == 'M')
+        {
+          memset(topicIN,0,sizeof(topicIN));
+           //mg_mqtt_pub(c, mqtt_topic("tx", "b/tx"), mg_str_n(buf, len), 1, false);
+          if (in[1] != gpio_get_level(GPIO_NUM_5))
+          {
+            in[1] = gpio_get_level(GPIO_NUM_5);
+
+            snprintf(message, sizeof(message), "%d", in[1]);
+            MG_INFO(("Publishing %s", message));
+            get_mac_address_string(topicIN, sizeof(topicIN));
+            strcat(topicIN,"/I2");
+            mg_mqtt_pub(c, mqtt_topic("I2", topicIN), mg_str_n(message, strlen(message)), 1, false);
+          }
+          // entrada 1
+          if (in[0] != gpio_get_level(GPIO_NUM_17))
+          {
+            in[0] = gpio_get_level(GPIO_NUM_17);
+
+            snprintf(message, sizeof(message), "%d", in[0]);
+            MG_INFO(("Publishing: %s", message));
+            get_mac_address_string(topicIN, sizeof(topicIN));
+            strcat(topicIN,"/I1");
+            mg_mqtt_pub(c, mqtt_topic("I1", topicIN), mg_str_n(message, strlen(message)), 1, false);
+          }
+          // entrada 4
+          if (in[3] != gpio_get_level(GPIO_NUM_16))
+          {
+            in[3] = gpio_get_level(GPIO_NUM_16);
+
+            snprintf(message, sizeof(message), "%d", in[3]);
+            MG_INFO(("Publishing: %s", message));
+            get_mac_address_string(topicIN, sizeof(topicIN));
+            strcat(topicIN,"/I4");
+            mg_mqtt_pub(c, mqtt_topic("I4", topicIN), mg_str_n(message, strlen(message)), 1, false);
+          }
+        //entrada 3
+          if (in[2] != gpio_get_level(GPIO_NUM_4))
+          {
+            in[2] = gpio_get_level(GPIO_NUM_4);
+
+            snprintf(message, sizeof(message), "%d", in[2]);
+            MG_INFO(("Publishing: %s", message));
+            get_mac_address_string(topicIN, sizeof(topicIN));
+            strcat(topicIN,"/I3");
+            mg_mqtt_pub(c, mqtt_topic("I3", topicIN), mg_str_n(message, strlen(message)), 1, false);
+          }
+        }
 }
 
 static void update_string(struct mg_str json, const char *path, char **value) {
@@ -229,4 +287,16 @@ void uart_bridge_fn(struct mg_connection *c, int ev, void *ev_data,
     }
   }
   (void) fn_data;
+}
+
+
+void get_mac_address_string(char *mac_str, size_t size) {
+  uint8_t mac[6];
+  esp_err_t ret = esp_wifi_get_mac(ESP_IF_WIFI_STA, mac);
+  if (ret == ESP_OK) {
+      snprintf(mac_str, size, "%02X%02X%02X%02X%02X%02X",
+               mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  } else {
+      snprintf(mac_str, size, "Error getting MAC");
+  }
 }
