@@ -18,7 +18,7 @@
 #include <esp_wifi.h>
 #include <esp_event.h>
 #include <nvs_flash.h>
-
+#include "driver/gpio.h"
 #include <wifi_provisioning/manager.h>
 
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
