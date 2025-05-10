@@ -2,7 +2,8 @@
 // All rights reserved
 
 #include "mongoose.h"
-
+#include "driver/gpio.h"
+#include "esp_wifi.h"
 #define DEFAULT_TCP "tcp://0.0.0.0:4001"
 #define DEFAULT_WEBSOCKET "ws://0.0.0.0:4002"
 #define DEFAULT_MQTT "mqtt://broker.hivemq.com:1883?tx=b/tx&rx=b/rx"
@@ -12,15 +13,15 @@ struct endpoint {
   bool enable;
   struct mg_connection *c;
 };
-11
+
 struct state {
   struct endpoint tcp, websocket, mqtt;
   int tx, rx, baud;
 } s_state = {.tcp = {.enable = true},
              .websocket = {.enable = true},
              .mqtt = {.enable = false},
-             .tx = 5,
-             .rx = 4,
+             .tx = 10,
+             .rx = 9,
              .baud = 115200};
 
 void uart_init(int tx, int rx, int baud);
