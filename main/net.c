@@ -12,7 +12,7 @@ struct endpoint {
   bool enable;
   struct mg_connection *c;
 };
-
+11
 struct state {
   struct endpoint tcp, websocket, mqtt;
   int tx, rx, baud;
