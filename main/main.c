@@ -25,8 +25,48 @@ void config_write(struct mg_str config)
   mg_file_write(&mg_fs_posix, FS_ROOT "/config.json", config.ptr, config.len);
 }
 
-
 void btn_task(void *arg)
+{
+  ESP_LOGI(TAG, "Init button task...");
+  while (1)
+  {
+    vTaskDelay(pdMS_TO_TICKS(500));
+    if (gpio_get_level(GPIO_NUM_18) == 1)
+    {
+      ESP_LOGI(TAG, "Button pressed, monitoring duration...");
+
+      int seconds_held = 0;
+      bool ten_sec_action_done = false;
+
+      while (gpio_get_level(GPIO_NUM_18) == 1 && seconds_held < 12)
+      {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        seconds_held++;
+        ESP_LOGI(TAG, "Held for %d seconds", seconds_held);
+
+        if (seconds_held == 10 && !ten_sec_action_done)
+        {
+          ESP_LOGI(TAG, "Button held for 10 seconds. Entering provisioning...");
+          wifi_prov_mgr_reset_provisioning();
+      esp_restart();
+
+          ten_sec_action_done = true;
+        }
+      }
+
+      if (seconds_held >= 3 && seconds_held < 10)
+      {
+        ESP_LOGI(TAG, "Button held for 3 seconds. Restarting...");
+        esp_restart();
+      }
+      else if (seconds_held < 3)
+      {
+        ESP_LOGI(TAG, "Button released before 3 seconds.");
+      }
+    }
+  }
+}
+/*void btn_task(void *arg)
 {
   ESP_LOGI(TAG, "Init button task...");
   while (1)
@@ -76,7 +116,7 @@ void btn_task(void *arg)
       }
     }
   }
-}
+}*/
 
 #include "esp_log.h"
 void app_main(void)

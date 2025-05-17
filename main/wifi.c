@@ -34,7 +34,7 @@ static const char *TAG = "app";
 
 /* Signal Wi-Fi events on this event-group */
 const int WIFI_CONNECTED_EVENT = BIT0;
-//static EventGroupHandle_t wifi_event_group;
+// static EventGroupHandle_t wifi_event_group;
 
 #define PROV_QR_VERSION "v1"
 #define PROV_TRANSPORT_SOFTAP "softap"
@@ -106,7 +106,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         /* Signal main application to continue execution */
         gpio_set_level(GPIO_NUM_22, 1);
 
-        //xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
+        // xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
@@ -276,7 +276,7 @@ void app_wifi_init(void)
 
     /* Initialize the event loop */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    //wifi_event_group = xEventGroupCreate();
+    // wifi_event_group = xEventGroupCreate();
 
     /* Register our event handler for Wi-Fi, IP and Provisioning related events */
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
@@ -323,27 +323,15 @@ void app_wifi_init(void)
     ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
 
     bool provisioned = false;
-// si gpio 18 es 1 por 100 ms reseteo de credenciales
-int high_count = 0;
-for (int i = 0; i < 10; i++) {
-  ESP_LOGI("DDDDDDD", "GPIO18: %d", gpio_get_level(GPIO_NUM_18));
-  if (gpio_get_level(GPIO_NUM_18) == 1) {
-      high_count++;
-    }
-    vTaskDelay(pdMS_TO_TICKS(10)); // Delay for 10 ms
-  }
-  if (high_count >= 10) { // GPIO18 was high for approximately 100 ms
-    ESP_LOGI("DDDDDDD", "Resetting provisioning credentials");
-    wifi_prov_mgr_reset_provisioning();
-  }else{ ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
-  }
-/*#ifdef CONFIG_EXAMPLE_RESET_PROVISIONED
-    wifi_prov_mgr_reset_provisioning();
-#else
-    // Let's find out if the device is provisioned 
     ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
 
-#endif*/
+    /*#ifdef CONFIG_EXAMPLE_RESET_PROVISIONED
+        wifi_prov_mgr_reset_provisioning();
+    #else
+        // Let's find out if the device is provisioned
+        ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
+
+    #endif*/
 
     /* If device is not yet provisioned start provisioning service */
     if (!provisioned)
@@ -439,20 +427,20 @@ for (int i = 0; i < 10; i++) {
         // wifi_prov_mgr_deinit();
         /* Print QR code for provisioning */
         stop_led_task = false;
-            xTaskCreatePinnedToCore(
-        led_task,      // Nombre de la función que implementa la tarea
-        "LED Task",    // Nombre de la tarea (para depuración)
-        2048,          // Tamaño de la pila en palabras
-        NULL,          // Parámetro que se pasa a la tarea
-        5,             // Prioridad de la tarea
-        NULL,          // Handle de la tarea (opcional)
-        tskNO_AFFINITY // Núcleo en el que se ejecutará la tarea (sin afinidad)
-    );
+        xTaskCreatePinnedToCore(
+            led_task,      // Nombre de la función que implementa la tarea
+            "LED Task",    // Nombre de la tarea (para depuración)
+            2048,          // Tamaño de la pila en palabras
+            NULL,          // Parámetro que se pasa a la tarea
+            5,             // Prioridad de la tarea
+            NULL,          // Handle de la tarea (opcional)
+            tskNO_AFFINITY // Núcleo en el que se ejecutará la tarea (sin afinidad)
+        );
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
         wifi_prov_print_qr(service_name, pop, PROV_TRANSPORT_BLE);
-#else  /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
+#else /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
         wifi_prov_print_qr(service_name, pop, PROV_TRANSPORT_SOFTAP);
-         // Crear tarea para manejo de LEDs
+        // Crear tarea para manejo de LEDs
 
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_BLE */
     }
@@ -467,12 +455,11 @@ for (int i = 0; i < 10; i++) {
         /* Start Wi-Fi station */
         wifi_init_sta();
     }
-   
 
     /* Wait for Wi-Fi connection */
 
-    //xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_EVENT, false, true, portMAX_DELAY);
+    // xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_EVENT, false, true, portMAX_DELAY);
 
     // Eliminar tarea de LEDs
-   stop_led_task = true;
+    stop_led_task = true;
 }
