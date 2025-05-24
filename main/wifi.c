@@ -34,7 +34,7 @@ static const char *TAG = "app";
 
 /* Signal Wi-Fi events on this event-group */
 const int WIFI_CONNECTED_EVENT = BIT0;
-// static EventGroupHandle_t wifi_event_group;
+//static EventGroupHandle_t wifi_event_group;
 
 #define PROV_QR_VERSION "v1"
 #define PROV_TRANSPORT_SOFTAP "softap"
@@ -106,7 +106,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         /* Signal main application to continue execution */
         gpio_set_level(GPIO_NUM_22, 1);
 
-        // xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
+        //xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
@@ -276,7 +276,7 @@ void app_wifi_init(void)
 
     /* Initialize the event loop */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    // wifi_event_group = xEventGroupCreate();
+    //wifi_event_group = xEventGroupCreate();
 
     /* Register our event handler for Wi-Fi, IP and Provisioning related events */
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
@@ -458,8 +458,9 @@ void app_wifi_init(void)
 
     /* Wait for Wi-Fi connection */
 
-    // xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_EVENT, false, true, portMAX_DELAY);
+    //xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_EVENT, false, true, portMAX_DELAY);
 
     // Eliminar tarea de LEDs
-    stop_led_task = true;
+    if (provisioned)
+        stop_led_task = true;
 }
