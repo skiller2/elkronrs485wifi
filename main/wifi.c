@@ -90,6 +90,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         case WIFI_PROV_END:
             /* De-initialize manager once provisioning is finished */
             wifi_prov_mgr_deinit();
+            esp_restart(); // Restart the device after provisioning
             break;
         default:
             break;
