@@ -34,7 +34,7 @@ static const char *TAG = "app";
 
 /* Signal Wi-Fi events on this event-group */
 const int WIFI_CONNECTED_EVENT = BIT0;
-//static EventGroupHandle_t wifi_event_group;
+// static EventGroupHandle_t wifi_event_group;
 
 #define PROV_QR_VERSION "v1"
 #define PROV_TRANSPORT_SOFTAP "softap"
@@ -107,7 +107,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         /* Signal main application to continue execution */
         gpio_set_level(GPIO_NUM_22, 1);
 
-        //xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
+        // xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
@@ -258,6 +258,7 @@ void led_task(void *pvParameter)
         }
     }
 }
+#include <esp_netif.h>
 void app_wifi_init(void)
 {
     /* Initialize NVS partition */
@@ -277,7 +278,7 @@ void app_wifi_init(void)
 
     /* Initialize the event loop */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    //wifi_event_group = xEventGroupCreate();
+    // wifi_event_group = xEventGroupCreate();
 
     /* Register our event handler for Wi-Fi, IP and Provisioning related events */
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
@@ -285,13 +286,21 @@ void app_wifi_init(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
     /* Initialize Wi-Fi including netif with default config */
-    esp_netif_create_default_wifi_sta();
+    // esp_netif_create_default_wifi_sta();
+    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
     esp_netif_create_default_wifi_ap();
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    // Obtener la MAC y formar el hostname
+    uint8_t mac[6];
+    esp_wifi_get_mac(WIFI_IF_STA, mac);
+    char hostname[32];
+    snprintf(hostname, sizeof(hostname), "Efaisa-Comm-%02X%02X", mac[4], mac[5]);
 
+    esp_netif_set_hostname(sta_netif, hostname);
     /* Configuration for the provisioning manager */
     wifi_prov_mgr_config_t config = {
     /* What is the Provisioning Scheme that we want ?
@@ -459,7 +468,7 @@ void app_wifi_init(void)
 
     /* Wait for Wi-Fi connection */
 
-    //xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_EVENT, false, true, portMAX_DELAY);
+    // xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_EVENT, false, true, portMAX_DELAY);
 
     // Eliminar tarea de LEDs
     if (provisioned)
