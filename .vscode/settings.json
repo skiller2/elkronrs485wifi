@@ -2,16 +2,20 @@
   "C_Cpp.intelliSenseEngine": "Tag Parser",
   "idf.adapterTargetName": "esp32",
   "idf.openOcdConfigs": [
-    "board/esp32-wrover-kit-3.3v.cfg"
+    "board/esp32c3-builtin.cfg"
   ],
   "idf.flashType": "UART",
-  "idf.portWin": "COM4",
+  "idf.portWin": "COM3",
   "files.associations": {
     "*.inc": "c",
     "manager.h": "c",
     "main.h": "c",
     "scheme_ble.h": "c"
   },
-  "idf.pythonInstallPath": "C:\\Users\\alfredo\\.espressif\\tools\\idf-python\\3.8.7\\python.exe"
+  "idf.pythonInstallPath": "C:\\Users\\alfredo\\.espressif\\tools\\idf-python\\3.8.7\\python.exe",
+  "idf.currentSetup": "C:\\esp\\v6.0\\esp-idf",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32c3"
+  }
 
 }

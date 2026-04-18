@@ -78,7 +78,7 @@ void http_post(struct mg_mgr *mgr, const char *url, const char *body, const char
 void get_mac_address_string(char *mac_str, size_t size)
 {
   uint8_t mac[6];
-  esp_err_t ret = esp_wifi_get_mac(ESP_IF_WIFI_STA, mac);
+  esp_err_t ret = esp_wifi_get_mac(WIFI_IF_STA, mac);
   if (ret == ESP_OK)
   {
     snprintf(mac_str, size, "%02X%02X%02X%02X%02X%02X",

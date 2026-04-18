@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <main.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -19,14 +20,14 @@
 #include <esp_event.h>
 #include <nvs_flash.h>
 #include "driver/gpio.h"
-#include <wifi_provisioning/manager.h>
+#include <network_provisioning/manager.h>
 
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
-#include <wifi_provisioning/scheme_ble.h>
+#include <network_provisioning/scheme_ble.h>
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_BLE */
 
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
-#include <wifi_provisioning/scheme_softap.h>
+#include <network_provisioning/scheme_softap.h>
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
 #include "qrcode.h"
 
@@ -48,14 +49,14 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 #ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
     static int retries;
 #endif
-    if (event_base == WIFI_PROV_EVENT)
+    if (event_base == NETWORK_PROV_EVENT)
     {
         switch (event_id)
         {
-        case WIFI_PROV_START:
+        case NETWORK_PROV_START:
             ESP_LOGI(TAG, "Provisioning started");
             break;
-        case WIFI_PROV_CRED_RECV:
+        case NETWORK_PROV_WIFI_CRED_RECV:
         {
             wifi_sta_config_t *wifi_sta_cfg = (wifi_sta_config_t *)event_data;
             ESP_LOGI(TAG, "Received Wi-Fi credentials"
@@ -64,32 +65,32 @@ static void event_handler(void *arg, esp_event_base_t event_base,
                      (const char *)wifi_sta_cfg->password);
             break;
         }
-        case WIFI_PROV_CRED_FAIL:
+        case NETWORK_PROV_WIFI_CRED_FAIL:
         {
-            wifi_prov_sta_fail_reason_t *reason = (wifi_prov_sta_fail_reason_t *)event_data;
+            network_prov_wifi_sta_fail_reason_t *reason = (network_prov_wifi_sta_fail_reason_t *)event_data;
             ESP_LOGE(TAG, "Provisioning failed!\n\tReason : %s"
                           "\n\tPlease reset to factory and retry provisioning",
-                     (*reason == WIFI_PROV_STA_AUTH_ERROR) ? "Wi-Fi station authentication failed" : "Wi-Fi access-point not found");
+                     (*reason == NETWORK_PROV_WIFI_STA_AUTH_ERROR) ? "Wi-Fi station authentication failed" : "Wi-Fi access-point not found");
 #ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
             retries++;
             if (retries >= CONFIG_EXAMPLE_PROV_MGR_MAX_RETRY_CNT)
             {
                 ESP_LOGI(TAG, "Failed to connect with provisioned AP, reseting provisioned credentials");
-                wifi_prov_mgr_reset_sm_state_on_failure();
+                network_prov_mgr_reset_wifi_sm_state_on_failure();
                 retries = 0;
             }
 #endif
             break;
         }
-        case WIFI_PROV_CRED_SUCCESS:
+        case NETWORK_PROV_WIFI_CRED_SUCCESS:
             ESP_LOGI(TAG, "Provisioning successful");
 #ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
             retries = 0;
 #endif
             break;
-        case WIFI_PROV_END:
+        case NETWORK_PROV_END:
             /* De-initialize manager once provisioning is finished */
-            wifi_prov_mgr_deinit();
+            network_prov_mgr_deinit();
             esp_restart(); // Restart the device after provisioning
             break;
         default:
@@ -105,13 +106,13 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "Connected with IP Address:" IPSTR, IP2STR(&event->ip_info.ip));
         /* Signal main application to continue execution */
-        gpio_set_level(GPIO_NUM_22, 1);
+        gpio_set_level(LED_COMUNICACION, 1);
 
         // xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
-        gpio_set_level(GPIO_NUM_22, 0);
+        gpio_set_level(LED_COMUNICACION, 0);
         ESP_LOGI(TAG, "Disconnected. Connecting to the AP again...");
         esp_wifi_connect();
     }
@@ -206,33 +207,33 @@ void led_task(void *pvParameter)
             last_toggle_time = current_time;
 
             // Turn off all LEDs before changing the current one
-            gpio_set_level(GPIO_NUM_2, 0);  // LED ON
-            gpio_set_level(GPIO_NUM_19, 0); // LED DC
-            gpio_set_level(GPIO_NUM_0, 0);  // LED BATERIA
-            gpio_set_level(GPIO_NUM_21, 0); // LED ALARMA
-            gpio_set_level(GPIO_NUM_22, 0); // LED COMUNICACION
-            gpio_set_level(GPIO_NUM_23, 0); // LED FALLA
+            gpio_set_level(LED_ON, 0);  // LED ON
+            gpio_set_level(LED_DC, 0); // LED DC
+            gpio_set_level(LED_BATERIA, 0);  // LED BATERIA
+            gpio_set_level(LED_ALARMA, 0); // LED ALARMA
+            gpio_set_level(LED_COMUNICACION, 0); // LED COMUNICACION
+            gpio_set_level(LED_FALLA, 0); // LED FALLA
 
             // Turn on the current LED
             switch (current_led)
             {
             case 0:
-                gpio_set_level(GPIO_NUM_2, 1);
+                gpio_set_level(LED_ON, 1);
                 break; // LED ON
             case 1:
-                gpio_set_level(GPIO_NUM_19, 1);
+                gpio_set_level(LED_DC, 1);
                 break; // LED DC
             case 2:
-                gpio_set_level(GPIO_NUM_0, 1);
+                gpio_set_level(LED_BATERIA, 1);
                 break; // LED BATERIA
             case 3:
-                gpio_set_level(GPIO_NUM_21, 1);
+                gpio_set_level(LED_ALARMA, 1);
                 break; // LED ALARMA
             case 4:
-                gpio_set_level(GPIO_NUM_22, 1);
+                gpio_set_level(LED_COMUNICACION, 1);
                 break; // LED COMUNICACION
             case 5:
-                gpio_set_level(GPIO_NUM_23, 1);
+                gpio_set_level(LED_FALLA, 1);
                 break; // LED FALLA
             }
 
@@ -259,7 +260,7 @@ void led_task(void *pvParameter)
     }
 }
 #include <esp_netif.h>
-void app_wifi_init(void)
+void app_wifi_init()
 {
     /* Initialize NVS partition */
     esp_err_t ret = nvs_flash_init();
@@ -281,7 +282,7 @@ void app_wifi_init(void)
     // wifi_event_group = xEventGroupCreate();
 
     /* Register our event handler for Wi-Fi, IP and Provisioning related events */
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(NETWORK_PROV_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
@@ -302,14 +303,14 @@ void app_wifi_init(void)
 
     esp_netif_set_hostname(sta_netif, hostname);
     /* Configuration for the provisioning manager */
-    wifi_prov_mgr_config_t config = {
+    network_prov_mgr_config_t config = {
     /* What is the Provisioning Scheme that we want ?
      * wifi_prov_scheme_softap or wifi_prov_scheme_ble */
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
-        .scheme = wifi_prov_scheme_ble,
+        .scheme = network_prov_scheme_ble,
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_BLE */
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
-        .scheme = wifi_prov_scheme_softap,
+        .scheme = network_prov_scheme_softap,
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
 
     /* Any default scheme specific event handler that you would
@@ -321,19 +322,19 @@ void app_wifi_init(void)
      * to take care of this automatically. This can be set to
      * WIFI_PROV_EVENT_HANDLER_NONE when using wifi_prov_scheme_softap*/
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
-        .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM
+        .scheme_event_handler = NETWORK_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_BLE */
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
-                                    .scheme_event_handler = WIFI_PROV_EVENT_HANDLER_NONE
+                                    .scheme_event_handler = NETWORK_PROV_EVENT_HANDLER_NONE
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
     };
 
     /* Initialize provisioning manager with the
      * configuration parameters set above */
-    ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
+    ESP_ERROR_CHECK(network_prov_mgr_init(config));
 
     bool provisioned = false;
-    ESP_ERROR_CHECK(wifi_prov_mgr_is_provisioned(&provisioned));
+    ESP_ERROR_CHECK(network_prov_mgr_is_wifi_provisioned(&provisioned));
 
     /*#ifdef CONFIG_EXAMPLE_RESET_PROVISIONED
         wifi_prov_mgr_reset_provisioning();
@@ -362,7 +363,7 @@ void app_wifi_init(void)
          *          using X25519 key exchange and proof of possession (pop) and AES-CTR
          *          for encryption/decryption of messages.
          */
-        wifi_prov_security_t security = WIFI_PROV_SECURITY_1;
+        network_prov_security_t security = NETWORK_PROV_SECURITY_1;
 
         /* Do we want a proof-of-possession (ignored if Security 0 is selected):
          *      - this should be a string with length > 0
@@ -412,7 +413,7 @@ void app_wifi_init(void)
         /* If your build fails with linker errors at this point, then you may have
          * forgotten to enable the BT stack or BTDM BLE settings in the SDK (e.g. see
          * the sdkconfig.defaults in the example project) */
-        wifi_prov_scheme_ble_set_service_uuid(custom_service_uuid);
+        network_prov_scheme_ble_set_service_uuid(custom_service_uuid);
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_BLE */
 
         /* An optional endpoint that applications can create if they expect to
@@ -420,15 +421,15 @@ void app_wifi_init(void)
          * The endpoint name can be anything of your choice.
          * This call must be made before starting the provisioning.
          */
-        wifi_prov_mgr_endpoint_create("custom-data");
+        network_prov_mgr_endpoint_create("custom-data");
         /* Start provisioning service */
-        ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, pop, service_name, service_key));
+        ESP_ERROR_CHECK(network_prov_mgr_start_provisioning(security, pop, service_name, service_key));
 
         /* The handler for the optional endpoint created above.
          * This call must be made after starting the provisioning, and only if the endpoint
          * has already been created above.
          */
-        wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
+        network_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
         /* Uncomment the following to wait for the provisioning to finish and then release
          * the resources of the manager. Since in this case de-initialization is triggered
@@ -460,7 +461,7 @@ void app_wifi_init(void)
 
         /* We don't need the manager as device is already provisioned,
          * so let's release it's resources */
-        wifi_prov_mgr_deinit();
+        network_prov_mgr_deinit();
 
         /* Start Wi-Fi station */
         wifi_init_sta();

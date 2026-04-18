@@ -46,7 +46,7 @@ int uart_open(int no, int rx, int tx, int cts, int rts, int baud) {
   int e1 = uart_param_config(no, &uart_config);
 
 
-  gpio_set_direction(GPIO_NUM_0, GPIO_MODE_OUTPUT);
+  gpio_set_direction(LED_BATERIA, GPIO_MODE_OUTPUT);
 
 //Placa nueva GPIO_NUM_13, con la proto vieja GPIO_NUM_0 
   int e2 = uart_set_pin(no, tx, rx, GPIO_NUM_13, -1);
@@ -54,7 +54,7 @@ int uart_open(int no, int rx, int tx, int cts, int rts, int baud) {
 
 
   int e3 =
-      uart_driver_install(no, UART_FIFO_LEN * 2, UART_FIFO_LEN * 2, 0, NULL, 0);
+      uart_driver_install(no, CONFIG_SOC_UART_FIFO_LEN * 2, CONFIG_SOC_UART_FIFO_LEN * 2, 0, NULL, 0);
 
   uart_set_mode(no, UART_MODE_RS485_HALF_DUPLEX);
 
@@ -84,12 +84,12 @@ int uart_open_orig2(int no, int rx, int tx, int cts, int rts, int baud) {
 
 
   int e3 =
-      uart_driver_install(no, UART_FIFO_LEN * 2, UART_FIFO_LEN * 2, 0, NULL, 0);
+      uart_driver_install(no, CONFIG_SOC_UART_FIFO_LEN * 2, CONFIG_SOC_UART_FIFO_LEN * 2, 0, NULL, 0);
 
 
   // Agregado por ALFREDO
-  gpio_set_direction(GPIO_NUM_0, GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_0, 0);
+  gpio_set_direction(LED_BATERIA, GPIO_MODE_OUTPUT);
+  gpio_set_level(LED_BATERIA, 0);
 
   uart_set_mode(no, UART_MODE_RS485_HALF_DUPLEX);
 

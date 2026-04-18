@@ -2,8 +2,8 @@
 // All rights reserved
 
 #include "main.h"
-#include <wifi_provisioning/manager.h>
-#include <wifi_provisioning/scheme_softap.h>
+#include <network_provisioning/manager.h>
+#include <network_provisioning/scheme_softap.h>
 
 #include "esp_log.h"
 
@@ -31,14 +31,15 @@ void btn_task(void *arg)
   while (1)
   {
     vTaskDelay(pdMS_TO_TICKS(500));
-    if (gpio_get_level(GPIO_NUM_18) == 1)
+
+    if (gpio_get_level(BUTTON) == PRESSED_BTN)
     {
-      ESP_LOGI(TAG, "Button pressed, monitoring duration...");
+      ESP_LOGI(TAG, "Button pressed (%d), monitoring duration... ", gpio_get_level(BUTTON));
 
       int seconds_held = 0;
       bool ten_sec_action_done = false;
 
-      while (gpio_get_level(GPIO_NUM_18) == 1 && seconds_held < 12)
+      while (gpio_get_level(BUTTON) == PRESSED_BTN && seconds_held < 12)
       {
         vTaskDelay(pdMS_TO_TICKS(1000));
         seconds_held++;
@@ -47,7 +48,8 @@ void btn_task(void *arg)
         if (seconds_held == 10 && !ten_sec_action_done)
         {
           ESP_LOGI(TAG, "Button held for 10 seconds. Entering provisioning...");
-          wifi_prov_mgr_reset_provisioning();
+          network_prov_mgr_reset_wifi_provisioning();
+
       esp_restart();
 
           ten_sec_action_done = true;
@@ -76,14 +78,14 @@ void btn_task(void *arg)
 
     // Debounce delay
     vTaskDelay(pdMS_TO_TICKS(500));
-    if (gpio_get_level(GPIO_NUM_18) == 1)
+    if (gpio_get_level(BUTTON) == 1)
     {
       ESP_LOGI(TAG, "Button pressed, monitoring duration...");
 
       int seconds_held = 0;
       bool five_sec_action_done = false;
 
-      while (gpio_get_level(GPIO_NUM_18) == 1 && seconds_held < 11)
+      while (gpio_get_level(BUTTON) == 1 && seconds_held < 11)
       {
         vTaskDelay(pdMS_TO_TICKS(1000));
         seconds_held++;
@@ -93,7 +95,7 @@ void btn_task(void *arg)
         {
           ESP_LOGI(TAG, "Button held for 5 seconds. Performing provisioning...");
 
-          wifi_prov_mgr_reset_provisioning();
+          network_prov_mgr_reset_provisioning();
         app_wifi_init();
 
           five_sec_action_done = true;
@@ -132,39 +134,46 @@ void app_main(void)
 
   MG_INFO(("FS at %s initialised, status: %d, partition label: %s", conf.base_path, res, conf.partition_label));
 
+  
+    gpio_set_direction(BUTTON, GPIO_MODE_INPUT);
   // Try to connect to wifi by using saved WiFi credentials
   char *json = mg_file_read(&mg_fs_posix, WIFI_FILE, NULL);
 
   // LED BATERIA
-  gpio_set_direction(GPIO_NUM_0, GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_0, 0);
+  gpio_set_direction(LED_BATERIA, GPIO_MODE_OUTPUT);
+  gpio_set_level(LED_BATERIA, 0);
 
   // LED COMUNICACION
-  gpio_set_direction(GPIO_NUM_22, GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_22, 0);
+  gpio_set_direction(LED_COMUNICACION, GPIO_MODE_OUTPUT);
+  gpio_set_level(LED_COMUNICACION, 0);
 
   // LED ON
-  gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_2, 0);
+  gpio_set_direction(LED_ON, GPIO_MODE_OUTPUT);
+  gpio_set_level(LED_ON, 0);
 
   // LED FALLA
-  gpio_set_direction(GPIO_NUM_23, GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_23, 0);
+  gpio_set_direction(LED_FALLA, GPIO_MODE_OUTPUT);
+  gpio_set_level(LED_FALLA, 0);
 
   // LED ALARMA
-  gpio_set_direction(GPIO_NUM_21, GPIO_MODE_OUTPUT);
-  gpio_set_level(GPIO_NUM_21, 0);
+  gpio_set_direction(LED_ALARMA, GPIO_MODE_OUTPUT);
+  gpio_set_level(LED_ALARMA, 0);
 
-  gpio_set_direction(GPIO_NUM_18, GPIO_MODE_INPUT);
+  gpio_set_direction(BUTTON, GPIO_MODE_INPUT);
 
-  gpio_set_level(GPIO_NUM_2, 1);
+  gpio_set_level(LED_ON, 1);
 
 //  gpio_install_isr_service(0);
-//  gpio_isr_handler_add(GPIO_NUM_18, button_isr_handler, NULL);
+//  gpio_isr_handler_add(BUTTON, button_isr_handler, NULL);
 
   xTaskCreate(btn_task, "btn_task", 2048, NULL, 10, NULL);
 
+  MG_INFO(("PASO1"));
+
+  ESP_LOGI(TAG, "Attempting to connect to WiFi...");
   app_wifi_init();
+
+  ESP_LOGI(TAG, "Continuing...");
 
   struct mg_mgr mgr;
   mg_mgr_init(&mgr);
@@ -175,9 +184,9 @@ void app_main(void)
 
   for (;;)
   {
-    gpio_set_level(GPIO_NUM_2, 0);
+    gpio_set_level(LED_ON, 0);
     mg_mgr_poll(&mgr, 150);
-    gpio_set_level(GPIO_NUM_2, 1);
+    gpio_set_level(LED_ON, 1);
     mg_mgr_poll(&mgr, 150);
   }; // Infinite event loop
 }
