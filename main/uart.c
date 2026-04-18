@@ -104,6 +104,14 @@ void uart_init(int tx, int rx, int baud) {
 }
 
 
+
+
+
+
+
+
+#ifdef CONFIG_ELKRON_EMULATOR
+
 int uart_write_this(const void *buf, int len) {
   int no = UART_NO;
   int writelen = 0;
@@ -136,7 +144,6 @@ int uart_write_this(const void *buf, int len) {
   return writelen;
 */  
 }
-
 
 
 int uart_read(void *buf, size_t len) {
@@ -173,6 +180,8 @@ int uart_read(void *buf, size_t len) {
   return n;
 }
 
+
+
 int uart_write_queue(const void *buf, size_t len){
   memcpy(global_buf, buf, len);
   global_len = len;
@@ -180,3 +189,23 @@ int uart_write_queue(const void *buf, size_t len){
   MG_DEBUG(("ENQUEQUE uart_read %d bytes: [%.*s]", len, len, (char *) buf));
   return len;
 }
+
+#else
+
+int uart_read(void *buf, size_t len) {
+  size_t x = 0;
+  int no = UART_NO;
+  if (uart_get_buffered_data_len(no, &x) != ESP_OK || x == 0) return 0;
+  int n = uart_read_bytes(no, buf, len, 10 / portTICK_PERIOD_MS);
+  MG_DEBUG(("uart_read %d bytes: [%.*s]", n, n, (char *) buf));
+  return n;
+}
+
+int uart_write_queue(const void *buf, size_t len){
+  memcpy(global_buf, buf, len);
+  global_len = len;
+  MG_DEBUG(("ENQUEQUE uart_read %d bytes: [%.*s]", len, len, (char *) buf));
+  return len;
+}
+
+#endif

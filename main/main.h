@@ -30,6 +30,7 @@ void cli_init(void);
 //GPIO_NUM_21 is used for LED ALARMA
 //GPIO_NUM_18 is used for BUTTON
 //
+//#define CONFIG_ELKRON_EMULATOR 1
 
 #ifdef CONFIG_IDF_TARGET_ESP32
   #define LED_BATERIA GPIO_NUM_0
