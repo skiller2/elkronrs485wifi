@@ -202,9 +202,10 @@ int uart_read(void *buf, size_t len) {
 }
 
 int uart_write_queue(const void *buf, size_t len){
-  memcpy(global_buf, buf, len);
-  global_len = len;
-  uart_write_bytes(UART_NO, (const char *) global_buf, global_len);
+  //memcpy(global_buf, buf, len);
+  //global_len = len;
+  //uart_write_bytes(UART_NO, (const char *) global_buf, global_len);
+  uart_write_bytes(UART_NO, (const char *) buf, len);
   MG_DEBUG(("ENQUEQUE uart_read %d bytes: [%.*s]", len, len, (char *) buf));
   return len;
 }
