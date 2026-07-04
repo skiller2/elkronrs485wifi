@@ -14,7 +14,7 @@
     "scheme_ble.h": "c"
   },
   "idf.pythonInstallPath": "C:\\Users\\alfredo\\.espressif\\tools\\idf-python\\3.8.7\\python.exe",
-  "idf.currentSetup": "C:\\esp\\v6.0\\esp-idf",
+  "idf.currentSetup": "C:\\esp61\\v6.0.1\\esp-idf",
   "idf.customExtraVars": {
     "OPENOCD_SCRIPTS": "C:\\Users\\Nicolas\\.espressif\\tools\\openocd-esp32\\v0.10.0-esp32-20200709/openocd-esp32/share/openocd/scripts",
     "IDF_CCACHE_ENABLE": "1",
