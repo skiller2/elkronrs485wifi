@@ -20,10 +20,11 @@
     "IDF_CCACHE_ENABLE": "1",
     "IDF_TARGET": "esp32"
   },
-  "clangd.path": "C:\\Espressif\\tools\\esp-clang\\esp-20.1.1_20250829\\esp-clang\\bin\\clangd.exe",
+  "clangd.path": "C:\\Espressif\\tools\\esp-clangd\\esp-21.1.3_20260408\\esp-clangd\\bin\\clangd.exe",
   "clangd.arguments": [
     "--background-index",
     "--query-driver=**",
-    "--compile-commands-dir=c:\\Users\\Nicolas\\Documents\\ESP\\ElkronESP\\elkronrs485wifi\\build"
-  ]
+    "--compile-commands-dir=c:\\work\\elkronrs485wifi\\build"
+  ],
+  "idf.port": "COM14"
 }
